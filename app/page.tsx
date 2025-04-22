@@ -83,11 +83,11 @@ export default function Home() {
           </form>
         </div>
 
-        <div className="mt-8 text-center">
+        {/* <div className="mt-8 text-center">
           <Link href="/admin" className="text-secondary hover:underline">
             Admin Dashboard
           </Link>
-        </div>
+        </div> */}
       </div>
     </main>
   )
