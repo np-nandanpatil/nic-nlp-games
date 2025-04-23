@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRightIcon } from '@heroicons/react/24/solid'
+import { addParticipant } from './lib/firebase/services'
 
 export default function Home() {
   const router = useRouter()
@@ -12,13 +13,29 @@ export default function Home() {
     usn: '',
     mobile: ''
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Store user data in localStorage
-    localStorage.setItem('userData', JSON.stringify(formData))
-    // Redirect to games page
-    router.push('/games')
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Add participant to Firebase
+      await addParticipant(formData)
+      
+      // Store user data in localStorage for quick access
+      localStorage.setItem('userData', JSON.stringify(formData))
+      
+      // Redirect to games page
+      router.push('/games')
+    } catch (err) {
+      console.error('Error saving participant:', err)
+      setError('Failed to save your details. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,6 +47,12 @@ export default function Home() {
         
         <div className="card">
           <h2 className="text-2xl font-semibold mb-6 text-center">Registration</h2>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -43,6 +66,7 @@ export default function Home() {
                 className="input-field"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                disabled={loading}
               />
             </div>
 
@@ -58,6 +82,7 @@ export default function Home() {
                 className="input-field"
                 value={formData.usn}
                 onChange={(e) => setFormData({ ...formData, usn: e.target.value })}
+                disabled={loading}
               />
             </div>
 
@@ -73,12 +98,26 @@ export default function Home() {
                 className="input-field"
                 value={formData.mobile}
                 onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                disabled={loading}
               />
             </div>
 
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-              Start Games
-              <ArrowRightIcon className="w-5 h-5" />
+            <button 
+              type="submit" 
+              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Start Games
+                  <ArrowRightIcon className="w-5 h-5" />
+                </>
+              )}
             </button>
           </form>
         </div>

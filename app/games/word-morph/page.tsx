@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { updateScore } from '../../lib/firebase/services'
 
 const wordPairs = [
   { start: 'cat', end: 'dog' },
@@ -19,6 +20,8 @@ export default function WordMorph() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [attempts, setAttempts] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -28,7 +31,7 @@ export default function WordMorph() {
     setCurrentWord(wordPairs[currentPair].start)
   }, [currentPair, router])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newWord = (e.target as HTMLFormElement).word.value.toLowerCase().trim()
     
@@ -58,16 +61,24 @@ export default function WordMorph() {
       const points = Math.max(10 - attempts, 1)
       setScore(score + points)
       
-      setTimeout(() => {
+      setTimeout(async () => {
         setShowFeedback(false)
         setAttempts(0)
         if (currentPair < wordPairs.length - 1) {
           setCurrentPair(currentPair + 1)
         } else {
           // Game completed
-          const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-          localStorage.setItem(`${userData.usn}_wordMorph`, score.toString())
-          router.push('/games')
+          setLoading(true)
+          try {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+            await updateScore(userData.usn, 'wordMorph', score)
+            router.push('/games')
+          } catch (err) {
+            console.error('Error updating score:', err)
+            setError('Failed to save your score. Please try again.')
+          } finally {
+            setLoading(false)
+          }
         }
       }, 2000)
     }
@@ -79,6 +90,12 @@ export default function WordMorph() {
         <h1 className="text-4xl font-bold text-center mb-8 text-primary">
           Word Morph
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
         <div className="card">
           <div className="text-center mb-8">
@@ -107,6 +124,7 @@ export default function WordMorph() {
                 className="input-field"
                 placeholder="Enter next word..."
                 required
+                disabled={loading}
               />
             </div>
 
@@ -116,8 +134,19 @@ export default function WordMorph() {
               </div>
             )}
 
-            <button type="submit" className="btn-primary w-full">
-              Submit Word
+            <button 
+              type="submit" 
+              className="btn-primary w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Saving Score...
+                </div>
+              ) : (
+                'Submit Word'
+              )}
             </button>
           </form>
         </div>

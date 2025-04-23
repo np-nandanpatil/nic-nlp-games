@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { updateScore } from '../../lib/firebase/services'
 
 const emojiQuestions = [
   { emojis: '🤖💭', answer: 'machine learning' },
@@ -23,6 +24,8 @@ export default function EmojiNlp() {
   const [score, setScore] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -31,13 +34,27 @@ export default function EmojiNlp() {
     }
   }, [router])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const updateScoreInFirebase = async (newScore: number) => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+      await updateScore(userData.usn, 'emojiNlp', newScore)
+    } catch (err) {
+      console.error('Error updating score:', err)
+      setError('Failed to save your score. Please try again.')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const isAnswerCorrect = answer.toLowerCase().trim() === emojiQuestions[currentQuestion].answer
     setIsCorrect(isAnswerCorrect)
     if (isAnswerCorrect) {
-      setScore(score + 10)
+      const newScore = score + 10
+      setScore(newScore)
+      setLoading(true)
+      await updateScoreInFirebase(newScore)
+      setLoading(false)
     }
     
     setShowFeedback(true)
@@ -48,8 +65,6 @@ export default function EmojiNlp() {
         setCurrentQuestion(currentQuestion + 1)
       } else {
         // Game completed
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-        localStorage.setItem(`${userData.usn}_emojiNlp`, score.toString())
         router.push('/games')
       }
     }, 2000)
@@ -61,6 +76,12 @@ export default function EmojiNlp() {
         <h1 className="text-4xl font-bold text-center mb-8 text-primary">
           Emoji NLP
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
         <div className="card">
           <div className="text-center mb-8">
@@ -81,7 +102,7 @@ export default function EmojiNlp() {
                 placeholder="Enter your answer..."
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                disabled={showFeedback}
+                disabled={showFeedback || loading}
                 required
               />
             </div>
@@ -95,9 +116,16 @@ export default function EmojiNlp() {
             <button
               type="submit"
               className="btn-primary w-full"
-              disabled={showFeedback}
+              disabled={showFeedback || loading}
             >
-              Submit Answer
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Saving Score...
+                </div>
+              ) : (
+                'Submit Answer'
+              )}
             </button>
           </form>
         </div>

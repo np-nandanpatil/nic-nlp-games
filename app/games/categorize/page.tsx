@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { updateScore } from '../../lib/firebase/services'
 
 const categories = ['Sentiment', 'Topic', 'Intent']
 
@@ -64,6 +65,8 @@ export default function Categorize() {
   const [score, setScore] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [selectedAnswer, setSelectedAnswer] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -72,13 +75,27 @@ export default function Categorize() {
     }
   }, [router])
 
-  const handleAnswer = (category: string) => {
+  const updateScoreInFirebase = async (newScore: number) => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+      await updateScore(userData.usn, 'categorize', newScore)
+    } catch (err) {
+      console.error('Error updating score:', err)
+      setError('Failed to save your score. Please try again.')
+    }
+  }
+
+  const handleAnswer = async (category: string) => {
     const isCorrect = category === questions[currentQuestion].category
     setSelectedAnswer(category)
     setShowFeedback(true)
     
     if (isCorrect) {
-      setScore(score + 10)
+      const newScore = score + 10
+      setScore(newScore)
+      setLoading(true)
+      await updateScoreInFirebase(newScore)
+      setLoading(false)
     }
 
     setTimeout(() => {
@@ -88,8 +105,6 @@ export default function Categorize() {
         setCurrentQuestion(currentQuestion + 1)
       } else {
         // Game completed
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-        localStorage.setItem(`${userData.usn}_categorize`, score.toString())
         router.push('/games')
       }
     }, 2000)
@@ -101,6 +116,12 @@ export default function Categorize() {
         <h1 className="text-4xl font-bold text-center mb-8 text-primary">
           Categorize That!
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
         <div className="card">
           <div className="text-center mb-8">
@@ -120,7 +141,7 @@ export default function Categorize() {
               <button
                 key={category}
                 onClick={() => handleAnswer(category)}
-                disabled={showFeedback}
+                disabled={showFeedback || loading}
                 className={`w-full p-3 rounded-lg transition-colors ${
                   showFeedback
                     ? category === questions[currentQuestion].category
@@ -145,6 +166,13 @@ export default function Categorize() {
                   Wrong! The correct category was: {questions[currentQuestion].category}
                 </div>
               )}
+            </div>
+          )}
+
+          {loading && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary"></div>
+              <span>Saving Score...</span>
             </div>
           )}
         </div>
