@@ -22,6 +22,8 @@ export interface NewParticipant {
 
 export const addParticipant = async (participant: NewParticipant) => {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    
     console.log('Adding participant:', participant)
     const docRef = await addDoc(collection(db, 'participants'), {
       ...participant,
@@ -43,6 +45,8 @@ export const addParticipant = async (participant: NewParticipant) => {
 
 export const getParticipants = async (): Promise<Participant[]> => {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    
     console.log('Fetching participants...')
     const q = query(collection(db, 'participants'), orderBy('scores.total', 'desc'))
     const querySnapshot = await getDocs(q)
@@ -62,6 +66,8 @@ export const getParticipants = async (): Promise<Participant[]> => {
 
 export const updateScore = async (usn: string, game: 'emojiNlp' | 'categorize' | 'wordMorph', score: number) => {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    
     console.log('Updating score for participant:', usn, 'game:', game, 'score:', score)
     
     // First, find the document with matching USN
