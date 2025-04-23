@@ -25,7 +25,7 @@ An interactive website featuring three NLP-related games for ML enthusiasts:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/nic-nlp-games.git
+git clone https://github.com/np-nandanpatil/nic-nlp-games.git
 cd nic-nlp-games
 ```
 
@@ -41,44 +41,6 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deployment to GitHub Pages
-
-1. Update the `next.config.js` file with your repository name:
-```javascript
-basePath: '/your-repo-name',
-assetPrefix: '/your-repo-name/',
-```
-
-2. Build the project:
-```bash
-npm run build
-```
-
-3. Export the static files:
-```bash
-npm run export
-```
-
-4. Create a new branch called `gh-pages`:
-```bash
-git checkout -b gh-pages
-```
-
-5. Copy the contents of the `out` directory to the root of your repository:
-```bash
-cp -r out/* .
-```
-
-6. Commit and push the changes:
-```bash
-git add .
-git commit -m "Deploy to GitHub Pages"
-git push origin gh-pages
-```
-
-7. Go to your repository settings on GitHub, navigate to "Pages", and select the `gh-pages` branch as the source.
-
-8. Your site will be available at `https://yourusername.github.io/your-repo-name`
 
 ## Project Structure
 
