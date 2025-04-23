@@ -47,4 +47,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
-          enable_jekyll: false 
+          enable_jekyll: false
+          force_orphan: true
+          commit_message: "Deploy: $(date +'%Y-%m-%d %H:%M:%S')" 
