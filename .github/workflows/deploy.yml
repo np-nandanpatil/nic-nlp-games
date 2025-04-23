@@ -42,11 +42,22 @@ jobs:
           echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" >> .env.local
           npm run build
 
+      - name: Clean up old deployment
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git rm -rf .
+          git commit -m "Clean up old deployment"
+          git push origin gh-pages
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
+          publish_branch: gh-pages
           enable_jekyll: false
           force_orphan: true
           commit_message: "Deploy: $(date +'%Y-%m-%d %H:%M:%S')" 
