@@ -18,7 +18,6 @@ An interactive website featuring three NLP-related games for ML enthusiasts:
 - Next.js 14
 - TypeScript
 - Tailwind CSS
-- React Icons
 - Heroicons
 
 ## Getting Started
