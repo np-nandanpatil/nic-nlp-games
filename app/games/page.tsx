@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   FaceSmileIcon,
   DocumentTextIcon,
   ArrowsRightLeftIcon
@@ -82,24 +82,24 @@ export default function Games() {
       description: 'Guess NLP/ML terms from emoji combinations',
       icon: <FaceSmileIcon className="w-12 h-12" />,
       color: 'bg-pink-100 text-pink-600',
-      status: currentGame === 'emoji-nlp' ? 'current' : 
-              currentGame === 'categorize' || currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
+      status: currentGame === 'emoji-nlp' ? 'current' :
+        currentGame === 'categorize' || currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
     },
     {
       title: 'Categorize That!',
       description: 'Classify short text into their correct categories',
       icon: <DocumentTextIcon className="w-12 h-12" />,
       color: 'bg-purple-100 text-purple-600',
-      status: currentGame === 'categorize' ? 'current' : 
-              currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
+      status: currentGame === 'categorize' ? 'current' :
+        currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
     },
     {
       title: 'Word Morph',
       description: 'Transform words one letter at a time',
       icon: <ArrowsRightLeftIcon className="w-12 h-12" />,
       color: 'bg-blue-100 text-blue-600',
-      status: currentGame === 'word-morph' ? 'current' : 
-              currentGame === 'completed' ? 'completed' : 'upcoming'
+      status: currentGame === 'word-morph' ? 'current' :
+        currentGame === 'completed' ? 'completed' : 'upcoming'
     }
   ]
 
@@ -132,12 +132,11 @@ export default function Games() {
 
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {games.map((game, index) => (
-          <div 
-            key={index} 
-            className={`card h-full ${
-              game.status === 'current' ? 'ring-2 ring-primary' : 
-              game.status === 'completed' ? 'opacity-75' : 'opacity-50'
-            }`}
+          <div
+            key={index}
+            className={`card h-full ${game.status === 'current' ? 'ring-2 ring-primary' :
+                game.status === 'completed' ? 'opacity-75' : 'opacity-50'
+              }`}
           >
             <div className={`rounded-full p-4 w-fit mb-4 ${game.color}`}>
               {game.icon}
