@@ -34,27 +34,26 @@ export default function EmojiNlp() {
     }
   }, [router])
 
-  const updateScoreInFirebase = async (newScore: number) => {
-    try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-      await updateScore(userData.usn, 'emojiNlp', newScore)
-    } catch (err) {
-      console.error('Error updating score:', err)
-      setError('Failed to save your score. Please try again.')
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const isAnswerCorrect = answer.toLowerCase().trim() === emojiQuestions[currentQuestion].answer
     setIsCorrect(isAnswerCorrect)
+    
     if (isAnswerCorrect) {
       const newScore = score + 10
       setScore(newScore)
       setLoading(true)
-      await updateScoreInFirebase(newScore)
-      setLoading(false)
+      try {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+        await updateScore(userData.usn, 'emojiNlp', newScore)
+        console.log('Score updated successfully:', newScore)
+      } catch (err) {
+        console.error('Error updating score:', err)
+        setError('Failed to save your score. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
     
     setShowFeedback(true)

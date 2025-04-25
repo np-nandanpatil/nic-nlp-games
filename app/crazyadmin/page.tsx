@@ -3,37 +3,41 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { db } from '../lib/firebase/config'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, onSnapshot } from 'firebase/firestore'
 
 export default function AdminLogin() {
+  const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [scores, setScores] = useState<any[]>([])
-  const router = useRouter()
 
-  // Add useEffect for auto-refresh
+  // Add real-time listener for scores
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    if (!isAuthenticated || !db) return;
 
-    if (isAuthenticated) {
-      // Initial fetch
-      fetchScores();
-      
-      // Set up interval for auto-refresh
-      intervalId = setInterval(() => {
-        fetchScores();
-      }, 3000); // Refresh every 3 seconds
-    }
+    const participantsRef = collection(db, 'participants')
+    const unsubscribe = onSnapshot(participantsRef, (snapshot) => {
+      const participantsData = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          name: data.name,
+          usn: data.usn,
+          emojiNlp: data.scores?.emojiNlp || 0,
+          categorize: data.scores?.categorize || 0,
+          wordMorph: data.scores?.wordMorph || 0,
+          total: data.scores?.total || 0,
+          createdAt: data.createdAt
+        }
+      })
+      setScores(participantsData)
+    })
 
-    // Cleanup interval on component unmount or when isAuthenticated changes
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [isAuthenticated]); // Only re-run effect if isAuthenticated changes
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
+  }, [isAuthenticated])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,30 +60,6 @@ export default function AdminLogin() {
       setError('')
     } catch (error: any) {
       setError('Login failed')
-    }
-  }
-
-  const fetchScores = async () => {
-    try {
-      if (!db) throw new Error('Firebase not initialized')
-      
-      const participantsSnapshot = await getDocs(collection(db, 'participants'))
-      const participantsData = participantsSnapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          name: data.name,
-          usn: data.usn,
-          emojiNlp: data.scores?.emojiNlp || 0,
-          categorize: data.scores?.categorize || 0,
-          wordMorph: data.scores?.wordMorph || 0,
-          total: data.scores?.total || 0,
-          createdAt: data.createdAt
-        }
-      })
-      setScores(participantsData)
-    } catch (error: any) {
-      console.error('Error fetching participants:', error)
     }
   }
 

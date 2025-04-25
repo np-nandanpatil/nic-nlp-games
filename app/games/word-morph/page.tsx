@@ -59,26 +59,30 @@ export default function WordMorph() {
       setIsCorrect(true)
       setShowFeedback(true)
       const points = Math.max(10 - attempts, 1)
-      setScore(score + points)
+      const newScore = score + points
+      setScore(newScore)
       
-      setTimeout(async () => {
+      // Update score immediately after puzzle completion
+      setLoading(true)
+      try {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+        await updateScore(userData.usn, 'wordMorph', newScore)
+        console.log('Score updated successfully:', newScore)
+      } catch (err) {
+        console.error('Error updating score:', err)
+        setError('Failed to save your score. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+      
+      setTimeout(() => {
         setShowFeedback(false)
         setAttempts(0)
         if (currentPair < wordPairs.length - 1) {
           setCurrentPair(currentPair + 1)
         } else {
           // Game completed
-          setLoading(true)
-          try {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-            await updateScore(userData.usn, 'wordMorph', score)
-            router.push('/games')
-          } catch (err) {
-            console.error('Error updating score:', err)
-            setError('Failed to save your score. Please try again.')
-          } finally {
-            setLoading(false)
-          }
+          router.push('/games')
         }
       }, 2000)
     }

@@ -75,16 +75,6 @@ export default function Categorize() {
     }
   }, [router])
 
-  const updateScoreInFirebase = async (newScore: number) => {
-    try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-      await updateScore(userData.usn, 'categorize', newScore)
-    } catch (err) {
-      console.error('Error updating score:', err)
-      setError('Failed to save your score. Please try again.')
-    }
-  }
-
   const handleAnswer = async (category: string) => {
     const isCorrect = category === questions[currentQuestion].category
     setSelectedAnswer(category)
@@ -94,8 +84,16 @@ export default function Categorize() {
       const newScore = score + 10
       setScore(newScore)
       setLoading(true)
-      await updateScoreInFirebase(newScore)
-      setLoading(false)
+      try {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+        await updateScore(userData.usn, 'categorize', newScore)
+        console.log('Score updated successfully:', newScore)
+      } catch (err) {
+        console.error('Error updating score:', err)
+        setError('Failed to save your score. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
 
     setTimeout(() => {
