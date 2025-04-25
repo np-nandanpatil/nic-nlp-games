@@ -77,4 +77,6 @@ nic-nlp-games/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+<!-- Deployment triggered: [timestamp] --> 
