@@ -9,8 +9,17 @@ const wordPairs = [
   { start: 'lead', end: 'gold' },
   { start: 'cold', end: 'warm' },
   { start: 'love', end: 'hate' },
-  { start: 'left', end: 'right' }
+  { start: 'head', end: 'tail' }
 ]
+
+// Dictionary of valid words for each puzzle
+const validWords: { [key: string]: string[] } = {
+  'cat-dog': ['cat', 'cot', 'dot', 'dog'],
+  'lead-gold': ['lead', 'load', 'goad', 'gold'],
+  'cold-warm': ['cold', 'cord', 'card', 'ward', 'warm'],
+  'love-hate': ['love', 'lave', 'late', 'hate'],
+  'head-tail': ['head', 'heal', 'teal', 'tell', 'tall', 'tail']
+}
 
 export default function WordMorph() {
   const router = useRouter()
@@ -22,6 +31,7 @@ export default function WordMorph() {
   const [attempts, setAttempts] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [inputValue, setInputValue] = useState('')
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -31,12 +41,22 @@ export default function WordMorph() {
     setCurrentWord(wordPairs[currentPair].start)
   }, [currentPair, router])
 
+  const isValidWord = (word: string): boolean => {
+    const currentPuzzle = `${wordPairs[currentPair].start}-${wordPairs[currentPair].end}`
+    return validWords[currentPuzzle].includes(word.toLowerCase())
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newWord = (e.target as HTMLFormElement).word.value.toLowerCase().trim()
+    const newWord = inputValue.toLowerCase().trim()
     
     if (newWord.length !== currentWord.length) {
       alert('Word must be the same length!')
+      return
+    }
+
+    if (!isValidWord(newWord)) {
+      alert('Not a valid word in this puzzle!')
       return
     }
 
@@ -54,6 +74,7 @@ export default function WordMorph() {
 
     setAttempts(attempts + 1)
     setCurrentWord(newWord)
+    setInputValue('')
 
     if (newWord === wordPairs[currentPair].end) {
       setIsCorrect(true)
@@ -124,7 +145,8 @@ export default function WordMorph() {
             <div>
               <input
                 type="text"
-                name="word"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 className="input-field"
                 placeholder="Enter next word..."
                 required
