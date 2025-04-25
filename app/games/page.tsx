@@ -29,27 +29,33 @@ export default function Games() {
         const { usn } = JSON.parse(userData)
         if (!db) throw new Error('Firebase not initialized')
 
+        console.log('Checking progress for USN:', usn)
+
         // Get user's scores
         const participantsRef = collection(db, 'participants')
         const q = query(participantsRef, where('usn', '==', usn))
         const querySnapshot = await getDocs(q)
 
         if (querySnapshot.empty) {
-          // New user, start with emoji-nlp
+          console.log('No existing progress found, starting with Emoji NLP')
           setCurrentGame('emoji-nlp')
         } else {
           const userData = querySnapshot.docs[0].data()
           const scores = userData.scores || {}
+          console.log('Current scores:', scores)
 
           // Determine next game based on scores
           if (!scores.emojiNlp) {
+            console.log('Starting Emoji NLP')
             setCurrentGame('emoji-nlp')
           } else if (!scores.categorize) {
+            console.log('Starting Categorize')
             setCurrentGame('categorize')
           } else if (!scores.wordMorph) {
+            console.log('Starting Word Morph')
             setCurrentGame('word-morph')
           } else {
-            // All games completed
+            console.log('All games completed')
             setCurrentGame('completed')
           }
         }

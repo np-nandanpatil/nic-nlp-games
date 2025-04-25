@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { db } from '../lib/firebase/config'
 import { collection, getDocs, onSnapshot } from 'firebase/firestore'
 
+type SortField = 'name' | 'usn' | 'emojiNlp' | 'categorize' | 'wordMorph' | 'total' | 'createdAt'
+type SortDirection = 'asc' | 'desc'
+
 export default function AdminLogin() {
   const router = useRouter()
   const [username, setUsername] = useState('')
@@ -12,6 +15,8 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [scores, setScores] = useState<any[]>([])
+  const [sortField, setSortField] = useState<SortField>('total')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   // Add real-time listener for scores
   useEffect(() => {
@@ -38,6 +43,42 @@ export default function AdminLogin() {
     // Cleanup subscription on unmount
     return () => unsubscribe()
   }, [isAuthenticated])
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      // Toggle direction if clicking the same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new field and default to descending
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+
+  const getSortedScores = () => {
+    return [...scores].sort((a, b) => {
+      let aValue = a[sortField]
+      let bValue = b[sortField]
+
+      // Handle date sorting
+      if (sortField === 'createdAt') {
+        aValue = aValue?.seconds || 0
+        bValue = bValue?.seconds || 0
+      }
+
+      // Handle string sorting
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue)
+      }
+
+      // Handle number sorting
+      return sortDirection === 'asc'
+        ? aValue - bValue
+        : bValue - aValue
+    })
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,6 +173,8 @@ export default function AdminLogin() {
     )
   }
 
+  const sortedScores = getSortedScores()
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
@@ -151,31 +194,52 @@ export default function AdminLogin() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('name')}
+                >
+                  Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  USN
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('usn')}
+                >
+                  USN {sortField === 'usn' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Emoji NLP
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('emojiNlp')}
+                >
+                  Emoji NLP {sortField === 'emojiNlp' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Categorize
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('categorize')}
+                >
+                  Categorize {sortField === 'categorize' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Word Morph
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('wordMorph')}
+                >
+                  Word Morph {sortField === 'wordMorph' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('total')}
+                >
+                  Total {sortField === 'total' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Registered At
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('createdAt')}
+                >
+                  Registered At {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {scores.map((participant) => (
+              {sortedScores.map((participant) => (
                 <tr key={participant.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {participant.name}
