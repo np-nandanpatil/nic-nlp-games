@@ -14,6 +14,7 @@ export default function Games() {
   const router = useRouter()
   const [currentGame, setCurrentGame] = useState<string>('emoji-nlp')
   const [loading, setLoading] = useState(true)
+  const [showStartButton, setShowStartButton] = useState(false)
 
   useEffect(() => {
     const checkUserAndProgress = async () => {
@@ -56,17 +57,18 @@ export default function Games() {
         console.error('Error checking progress:', error)
       } finally {
         setLoading(false)
+        setShowStartButton(true)
       }
     }
 
     checkUserAndProgress()
   }, [router])
 
-  useEffect(() => {
-    if (!loading && currentGame !== 'completed') {
+  const handleStartGame = () => {
+    if (currentGame !== 'completed') {
       router.push(`/games/${currentGame}`)
     }
-  }, [currentGame, loading, router])
+  }
 
   const games = [
     {
@@ -122,7 +124,7 @@ export default function Games() {
         Your Progress
       </h1>
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {games.map((game, index) => (
           <div 
             key={index} 
@@ -150,6 +152,17 @@ export default function Games() {
           </div>
         ))}
       </div>
+
+      {showStartButton && currentGame !== 'completed' && (
+        <div className="text-center">
+          <button
+            onClick={handleStartGame}
+            className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-lg font-semibold"
+          >
+            Start {games.find(g => g.status === 'current')?.title}
+          </button>
+        </div>
+      )}
     </main>
   )
 } 

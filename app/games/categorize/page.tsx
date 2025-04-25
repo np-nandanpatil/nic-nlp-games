@@ -104,8 +104,8 @@ export default function Categorize() {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1)
       } else {
-        // Game completed
-        router.push('/games')
+        // Game completed - redirect to next game
+        router.push('/games/word-morph')
       }
     }, 2000)
   }

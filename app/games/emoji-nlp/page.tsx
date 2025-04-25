@@ -64,8 +64,8 @@ export default function EmojiNlp() {
       if (currentQuestion < emojiQuestions.length - 1) {
         setCurrentQuestion(currentQuestion + 1)
       } else {
-        // Game completed
-        router.push('/games')
+        // Game completed - redirect to next game
+        router.push('/games/categorize')
       }
     }, 2000)
   }
