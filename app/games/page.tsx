@@ -8,13 +8,14 @@ import {
   ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline'
 import { db } from '../lib/firebase/config'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
 
 export default function Games() {
   const router = useRouter()
   const [currentGame, setCurrentGame] = useState<string>('emoji-nlp')
   const [loading, setLoading] = useState(true)
   const [showStartButton, setShowStartButton] = useState(false)
+  const [scores, setScores] = useState<{ total: number }>({ total: 0 })
 
   useEffect(() => {
     const checkUserAndProgress = async () => {
@@ -41,22 +42,27 @@ export default function Games() {
           setCurrentGame('emoji-nlp')
         } else {
           const userData = querySnapshot.docs[0].data()
-          const scores = userData.scores || {}
-          console.log('Current scores:', scores)
+          const userScores = userData.scores || {}
+          console.log('Current scores:', userScores)
+          setScores(userScores)
 
-          // Determine next game based on scores
-          if (!scores.emojiNlp) {
-            console.log('Starting Emoji NLP')
-            setCurrentGame('emoji-nlp')
-          } else if (!scores.categorize) {
-            console.log('Starting Categorize')
-            setCurrentGame('categorize')
-          } else if (!scores.wordMorph) {
-            console.log('Starting Word Morph')
-            setCurrentGame('word-morph')
-          } else {
+          // Check if all games are completed
+          if (userScores.emojiNlp && userScores.categorize && userScores.wordMorph) {
             console.log('All games completed')
             setCurrentGame('completed')
+            return
+          }
+
+          // Determine next game based on scores
+          if (!userScores.emojiNlp) {
+            console.log('Starting Emoji NLP')
+            setCurrentGame('emoji-nlp')
+          } else if (!userScores.categorize) {
+            console.log('Starting Categorize')
+            setCurrentGame('categorize')
+          } else if (!userScores.wordMorph) {
+            console.log('Starting Word Morph')
+            setCurrentGame('word-morph')
           }
         }
       } catch (error) {
@@ -71,6 +77,7 @@ export default function Games() {
   }, [router])
 
   const handleStartGame = () => {
+    // Only allow starting if not completed
     if (currentGame !== 'completed') {
       router.push(`/games/${currentGame}`)
     }
@@ -118,7 +125,7 @@ export default function Games() {
           Congratulations!
         </h1>
         <p className="text-center text-xl mb-8">
-          You have completed all the games. Thank you for participating!
+          Your quiz score is {scores?.total || 0} points out of 250!
         </p>
       </main>
     )

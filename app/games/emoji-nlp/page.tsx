@@ -52,7 +52,7 @@ export default function EmojiNlp() {
         console.error('Error updating score:', err)
         setError('Failed to save your score. Please try again.')
       } finally {
-        setLoading(false)
+      setLoading(false)
       }
     }
     

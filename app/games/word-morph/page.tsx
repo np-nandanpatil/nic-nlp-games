@@ -18,7 +18,34 @@ const validWords: { [key: string]: string[] } = {
   'lead-gold': ['lead', 'load', 'goad', 'gold'],
   'cold-warm': ['cold', 'cord', 'card', 'ward', 'warm'],
   'love-hate': ['love', 'lave', 'late', 'hate'],
-  'head-tail': ['head', 'heal', 'teal', 'tell', 'tall', 'tail']
+  'head-tail': ['head', 'heal', 'hell', 'hall', 'tall', 'tail']
+}
+
+// Dictionary of word meanings
+const wordMeanings: { [key: string]: string } = {
+  'cat': 'A small domesticated carnivorous mammal',
+  'cot': 'A small bed, especially one for a baby',
+  'dot': 'A small round mark or spot',
+  'dog': 'A domesticated carnivorous mammal',
+  'lead': 'To guide or direct',
+  'load': 'A heavy or bulky thing being carried',
+  'goad': 'To urge or encourage someone to do something',
+  'gold': 'A yellow precious metal',
+  'cold': 'Of or at a low temperature',
+  'cord': 'A thin string or rope',
+  'card': 'A piece of thick paper or thin cardboard',
+  'ward': 'A division in a hospital',
+  'warm': 'Of or at a moderately high temperature',
+  'love': 'An intense feeling of deep affection',
+  'lave': 'To wash or bathe',
+  'late': 'After the expected or usual time',
+  'hate': 'Feel intense or passionate dislike for',
+  'head': 'The upper part of the body',
+  'heal': 'To make or become healthy again',
+  'hell': 'A place of suffering and evil',
+  'hall': 'A large room for meetings or events',
+  'tall': 'Of great or more than average height',
+  'tail': 'The rear end of an animal'
 }
 
 export default function WordMorph() {
@@ -32,6 +59,7 @@ export default function WordMorph() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
+  const [lastWordMeaning, setLastWordMeaning] = useState<string | null>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -55,11 +83,6 @@ export default function WordMorph() {
       return
     }
 
-    if (!isValidWord(newWord)) {
-      alert('Not a valid word in this puzzle!')
-      return
-    }
-
     let diffCount = 0
     for (let i = 0; i < newWord.length; i++) {
       if (newWord[i] !== currentWord[i]) {
@@ -72,14 +95,24 @@ export default function WordMorph() {
       return
     }
 
+    // Increment attempts if the word satisfies the one-letter change rule
     setAttempts(attempts + 1)
+
+    if (!isValidWord(newWord)) {
+      alert('Not a valid word in this puzzle!')
+      return
+    }
+
     setCurrentWord(newWord)
     setInputValue('')
+    setLastWordMeaning(wordMeanings[newWord] || null)
 
     if (newWord === wordPairs[currentPair].end) {
       setIsCorrect(true)
       setShowFeedback(true)
-      const points = Math.max(10 - attempts, 1)
+      
+      // Award 10 points for each puzzle completion
+      const points = 10
       const newScore = score + points
       setScore(newScore)
       
@@ -99,11 +132,9 @@ export default function WordMorph() {
       setTimeout(() => {
         setShowFeedback(false)
         setAttempts(0)
+        setLastWordMeaning(null)
         if (currentPair < wordPairs.length - 1) {
           setCurrentPair(currentPair + 1)
-        } else {
-          // Game completed
-          router.push('/games')
         }
       }, 2000)
     }
@@ -139,6 +170,11 @@ export default function WordMorph() {
             <div className="text-sm text-gray-500">
               Attempts: {attempts}
             </div>
+            {lastWordMeaning && (
+              <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-md">
+                <strong>Meaning:</strong> {lastWordMeaning}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -156,7 +192,7 @@ export default function WordMorph() {
 
             {showFeedback && (
               <div className="text-center p-2 rounded bg-green-100 text-green-700">
-                Correct! +{Math.max(10 - attempts, 1)} points
+                Correct! +10 points
               </div>
             )}
 
