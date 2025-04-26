@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { db } from '../lib/firebase/config'
 import { collection, getDocs, onSnapshot } from 'firebase/firestore'
 
-type SortField = 'name' | 'usn' | 'emojiNlp' | 'categorize' | 'wordMorph' | 'total' | 'createdAt' | 'timeTaken'
+type SortField = 'name' | 'usn' | 'emojiNlp' | 'categorize' | 'wordMorph' | 'total' | 'createdAt' | 'timeTaken' | 'timeBasedScore'
 type SortDirection = 'asc' | 'desc'
 
 // Helper function to format time difference
@@ -20,6 +20,26 @@ const formatTimeDifference = (createdAt: any, lastAnswerTime: any) => {
   const seconds = Math.floor((diffMs % 60000) / 1000)
   
   return `${minutes}m ${seconds}s`
+}
+
+// Helper function to calculate time-based score
+const calculateTimeBasedScore = (total: number, timeTaken: string): number => {
+  if (timeTaken === 'N/A') return total
+  
+  // Parse time taken string (format: "Xm Ys")
+  const [minutes, seconds] = timeTaken.split(' ').map(part => {
+    const num = parseInt(part.replace(/[^0-9]/g, ''))
+    return part.includes('m') ? num * 60 : num
+  })
+  
+  const totalSeconds = minutes + seconds
+  
+  // Base score is the total points
+  // Time penalty: 1 point deducted for every 30 seconds
+  const timePenalty = Math.floor(totalSeconds / 30)
+  const finalScore = Math.max(0, total - timePenalty)
+  
+  return finalScore
 }
 
 export default function AdminLogin() {
@@ -40,6 +60,9 @@ export default function AdminLogin() {
     const unsubscribe = onSnapshot(participantsRef, (snapshot) => {
       const participantsData = snapshot.docs.map(doc => {
         const data = doc.data()
+        const timeTaken = formatTimeDifference(data.createdAt, data.lastAnswerTime)
+        const timeBasedScore = calculateTimeBasedScore(data.scores?.total || 0, timeTaken)
+        
         return {
           id: doc.id,
           name: data.name,
@@ -50,7 +73,8 @@ export default function AdminLogin() {
           total: data.scores?.total || 0,
           createdAt: data.createdAt,
           lastAnswerTime: data.lastAnswerTime,
-          timeTaken: formatTimeDifference(data.createdAt, data.lastAnswerTime)
+          timeTaken,
+          timeBasedScore
         }
       })
       setScores(participantsData)
@@ -258,6 +282,12 @@ export default function AdminLogin() {
                 >
                   Registered At {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('timeBasedScore')}
+                >
+                  Time-Based Score {sortField === 'timeBasedScore' && (sortDirection === 'asc' ? '↑' : '↓')}
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -286,6 +316,9 @@ export default function AdminLogin() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {participant.createdAt ? new Date(participant.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {participant.timeBasedScore}
                   </td>
                 </tr>
               ))}
