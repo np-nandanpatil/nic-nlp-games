@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRightIcon } from '@heroicons/react/24/solid'
 import { addParticipant } from './lib/firebase/services'
+import { db } from './lib/firebase/config'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 
 export default function Home() {
   const router = useRouter()
@@ -22,14 +24,57 @@ export default function Home() {
     setError(null)
 
     try {
-      // Add participant to Firebase
-      await addParticipant(formData)
-      
-      // Store user data in localStorage for quick access
-      localStorage.setItem('userData', JSON.stringify(formData))
-      
-      // Redirect to games page
-      router.push('/games')
+      if (!db) throw new Error('Firebase not initialized')
+
+      // Check if USN exists
+      const participantsRef = collection(db, 'participants')
+      const q = query(participantsRef, where('usn', '==', formData.usn))
+      const querySnapshot = await getDocs(q)
+
+      if (!querySnapshot.empty) {
+        // User exists - get their data and progress
+        const userData = querySnapshot.docs[0].data()
+        const scores = userData.scores || {}
+        
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify({
+          ...formData,
+          currentProgress: userData.currentProgress || {},
+          scores
+        }))
+        
+        // Redirect to games page
+        router.push('/games')
+      } else {
+        // New user - add to Firebase with progress tracking
+        await addParticipant({
+          ...formData,
+          currentProgress: {
+            emojiNlp: 0,  // Current question number for each game
+            categorize: 0,
+            wordMorph: 0
+          }
+        })
+        
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify({
+          ...formData,
+          currentProgress: {
+            emojiNlp: 0,
+            categorize: 0,
+            wordMorph: 0
+          },
+          scores: {
+            emojiNlp: 0,
+            categorize: 0,
+            wordMorph: 0,
+            total: 0
+          }
+        }))
+        
+        // Redirect to games page
+        router.push('/games')
+      }
     } catch (err) {
       console.error('Error saving participant:', err)
       setError('Failed to save your details. Please try again.')

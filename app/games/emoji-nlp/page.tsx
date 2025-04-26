@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateScore } from '../../lib/firebase/services'
+import { updateScore, updateProgress } from '../../lib/firebase/services'
 
 const emojiQuestions = [
   { emojis: '🤖💭', answer: 'machine learning' },
@@ -31,6 +31,14 @@ export default function EmojiNlp() {
     const userData = localStorage.getItem('userData')
     if (!userData) {
       router.push('/')
+      return
+    }
+
+    // Get saved progress and set current question
+    const { currentProgress, scores } = JSON.parse(userData)
+    if (currentProgress?.emojiNlp !== undefined) {
+      setCurrentQuestion(currentProgress.emojiNlp)
+      setScore(scores?.emojiNlp || 0)
     }
   }, [router])
 
@@ -47,12 +55,29 @@ export default function EmojiNlp() {
       try {
         const userData = JSON.parse(localStorage.getItem('userData') || '{}')
         await updateScore(userData.usn, 'emojiNlp', newScore)
-        console.log('Score updated successfully:', newScore)
+        
+        // Update progress in Firebase and localStorage
+        const nextQuestion = currentQuestion + 1
+        await updateProgress(userData.usn, 'emojiNlp', nextQuestion)
+        
+        // Update localStorage with new progress and score
+        localStorage.setItem('userData', JSON.stringify({
+          ...userData,
+          currentProgress: {
+            ...userData.currentProgress,
+            emojiNlp: nextQuestion
+          },
+          scores: {
+            ...userData.scores,
+            emojiNlp: newScore
+          }
+        }))
+        console.log('Score and progress updated successfully')
       } catch (err) {
         console.error('Error updating score:', err)
         setError('Failed to save your score. Please try again.')
       } finally {
-      setLoading(false)
+        setLoading(false)
       }
     }
     
@@ -63,11 +88,23 @@ export default function EmojiNlp() {
       if (currentQuestion < emojiQuestions.length - 1) {
         setCurrentQuestion(currentQuestion + 1)
       } else {
-        // Game completed - redirect to next game
-        router.push('/games/categorize')
+        // Only redirect if all questions are completed
+        router.push('/games')
       }
     }, 2000)
   }
+
+  // Add a useEffect to check if we should redirect to next game
+  useEffect(() => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      const { currentProgress } = JSON.parse(userData)
+      // If we've loaded the game but all questions are done, redirect to games page
+      if (currentProgress?.emojiNlp >= emojiQuestions.length) {
+        router.push('/games')
+      }
+    }
+  }, [router])
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">

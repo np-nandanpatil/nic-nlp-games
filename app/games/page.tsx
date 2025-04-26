@@ -43,26 +43,24 @@ export default function Games() {
         } else {
           const userData = querySnapshot.docs[0].data()
           const userScores = userData.scores || {}
+          const userProgress = userData.currentProgress || {}
           console.log('Current scores:', userScores)
+          console.log('Current progress:', userProgress)
           setScores(userScores)
 
-          // Check if all games are completed
-          if (userScores.emojiNlp && userScores.categorize && userScores.wordMorph) {
+          // Determine next game based on progress
+          if (userProgress.emojiNlp < 10) { // 10 questions in Emoji NLP
+            console.log('Continuing with Emoji NLP')
+            setCurrentGame('emoji-nlp')
+          } else if (userProgress.categorize < 10) { // 10 questions in Categorize
+            console.log('Starting/Continuing Categorize')
+            setCurrentGame('categorize')
+          } else if (userProgress.wordMorph < 5) { // 5 puzzles in Word Morph
+            console.log('Starting/Continuing Word Morph')
+            setCurrentGame('word-morph')
+          } else {
             console.log('All games completed')
             setCurrentGame('completed')
-            return
-          }
-
-          // Determine next game based on scores
-          if (!userScores.emojiNlp) {
-            console.log('Starting Emoji NLP')
-            setCurrentGame('emoji-nlp')
-          } else if (!userScores.categorize) {
-            console.log('Starting Categorize')
-            setCurrentGame('categorize')
-          } else if (!userScores.wordMorph) {
-            console.log('Starting Word Morph')
-            setCurrentGame('word-morph')
           }
         }
       } catch (error) {

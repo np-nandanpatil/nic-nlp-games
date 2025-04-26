@@ -6,6 +6,11 @@ export interface Participant {
   name: string
   usn: string
   mobile: string
+  currentProgress: {
+    emojiNlp: number
+    categorize: number
+    wordMorph: number
+  }
   scores: {
     emojiNlp: number
     categorize: number
@@ -18,6 +23,11 @@ export interface NewParticipant {
   name: string
   usn: string
   mobile: string
+  currentProgress: {
+    emojiNlp: number
+    categorize: number
+    wordMorph: number
+  }
 }
 
 export const addParticipant = async (participant: NewParticipant) => {
@@ -97,6 +107,38 @@ export const updateScore = async (usn: string, game: 'emojiNlp' | 'categorize' |
     console.log('Score updated successfully')
   } catch (error) {
     console.error('Error updating score:', error)
+    throw error
+  }
+}
+
+export const updateProgress = async (usn: string, game: 'emojiNlp' | 'categorize' | 'wordMorph', questionNumber: number) => {
+  try {
+    if (!db) throw new Error('Firebase not initialized')
+    
+    // Find the document with matching USN
+    const participantsRef = collection(db, 'participants')
+    const q = query(participantsRef, where('usn', '==', usn))
+    const querySnapshot = await getDocs(q)
+    
+    if (querySnapshot.empty) {
+      console.error('Participant not found:', usn)
+      return
+    }
+    
+    // Get the first matching document
+    const participantDoc = querySnapshot.docs[0]
+    const participantRef = doc(db, 'participants', participantDoc.id)
+    const currentData = participantDoc.data()
+    
+    await updateDoc(participantRef, {
+      currentProgress: {
+        ...currentData.currentProgress,
+        [game]: questionNumber
+      }
+    })
+    console.log('Progress updated successfully')
+  } catch (error) {
+    console.error('Error updating progress:', error)
     throw error
   }
 } 
