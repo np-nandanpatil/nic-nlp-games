@@ -5,8 +5,22 @@ import { useRouter } from 'next/navigation'
 import { db } from '../lib/firebase/config'
 import { collection, getDocs, onSnapshot } from 'firebase/firestore'
 
-type SortField = 'name' | 'usn' | 'emojiNlp' | 'categorize' | 'wordMorph' | 'total' | 'createdAt'
+type SortField = 'name' | 'usn' | 'emojiNlp' | 'categorize' | 'wordMorph' | 'total' | 'createdAt' | 'timeTaken'
 type SortDirection = 'asc' | 'desc'
+
+// Helper function to format time difference
+const formatTimeDifference = (createdAt: any, lastAnswerTime: any) => {
+  if (!createdAt || !lastAnswerTime) return 'N/A'
+  
+  const start = createdAt.seconds * 1000
+  const end = lastAnswerTime.seconds * 1000
+  const diffMs = end - start
+  
+  const minutes = Math.floor(diffMs / 60000)
+  const seconds = Math.floor((diffMs % 60000) / 1000)
+  
+  return `${minutes}m ${seconds}s`
+}
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -34,7 +48,9 @@ export default function AdminLogin() {
           categorize: data.scores?.categorize || 0,
           wordMorph: data.scores?.wordMorph || 0,
           total: data.scores?.total || 0,
-          createdAt: data.createdAt
+          createdAt: data.createdAt,
+          lastAnswerTime: data.lastAnswerTime,
+          timeTaken: formatTimeDifference(data.createdAt, data.lastAnswerTime)
         }
       })
       setScores(participantsData)
@@ -232,6 +248,12 @@ export default function AdminLogin() {
                 </th>
                 <th 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('timeTaken')}
+                >
+                  Time Taken {sortField === 'timeTaken' && (sortDirection === 'asc' ? '↑' : '↓')}
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('createdAt')}
                 >
                   Registered At {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -258,6 +280,9 @@ export default function AdminLogin() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {participant.total}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {participant.timeTaken}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {participant.createdAt ? new Date(participant.createdAt.seconds * 1000).toLocaleString() : 'N/A'}

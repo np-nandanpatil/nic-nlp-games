@@ -17,6 +17,8 @@ export interface Participant {
     wordMorph: number
     total: number
   }
+  createdAt: Date
+  lastAnswerTime?: Date
 }
 
 export interface NewParticipant {
@@ -102,7 +104,8 @@ export const updateScore = async (usn: string, game: 'emojiNlp' | 'categorize' |
     }
     
     await updateDoc(participantRef, {
-      scores: newScores
+      scores: newScores,
+      lastAnswerTime: new Date()
     })
     console.log('Score updated successfully')
   } catch (error) {

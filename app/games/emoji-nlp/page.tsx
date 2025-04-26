@@ -5,17 +5,33 @@ import { useRouter } from 'next/navigation'
 import { updateScore, updateProgress } from '../../lib/firebase/services'
 
 const emojiQuestions = [
-  { emojis: '🤖💭', answer: 'machine learning' },
-  { emojis: '🗣️💻', answer: 'natural language processing' },
-  { emojis: '🧠⚡', answer: 'neural network' },
+  { emojis: '🤖+🧠', answer: 'artificial intelligence' },
+  { emojis: '☁+💾', answer: 'cloud storage' },
+  { emojis: '🕸+📸', answer: 'webcam' },
+  { emojis: '🧬+💻', answer: 'biotechnology' },
   { emojis: '📊📈', answer: 'data analysis' },
-  { emojis: '🔍📝', answer: 'text mining' },
   { emojis: '🎯💯', answer: 'accuracy' },
-  { emojis: '🔄🎯', answer: 'iteration' },
-  { emojis: '📚🤖', answer: 'training data' },
-  { emojis: '🧪💡', answer: 'hypothesis' },
-  { emojis: '🎲📊', answer: 'probability' }
+  { emojis: '🚫+⛓‍💥', answer: 'blockchain' },
+  { emojis: '⚫+🕸', answer: 'dark web' },
+  { emojis: '💻➕🛡️', answer: 'cybersecurity' },
+  { emojis: '💻+👁️', answer: 'computer vision' }
 ]
+
+const isCorrectAnswer = (userAnswer: string, correctAnswer: string): boolean => {
+  const normalizedUserAnswer = userAnswer.toLowerCase().trim()
+  
+  // Handle alternative correct answers
+  switch(correctAnswer) {
+    case 'artificial intelligence':
+      return normalizedUserAnswer === 'artificial intelligence' || normalizedUserAnswer === 'ai'
+    case 'cloud storage':
+      return normalizedUserAnswer === 'cloud storage' || normalizedUserAnswer === 'cloud'
+    case 'cybersecurity':
+      return normalizedUserAnswer === 'cybersecurity' || normalizedUserAnswer === 'cyber security'
+    default:
+      return normalizedUserAnswer === correctAnswer
+  }
+}
 
 export default function EmojiNlp() {
   const router = useRouter()
@@ -45,7 +61,7 @@ export default function EmojiNlp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const isAnswerCorrect = answer.toLowerCase().trim() === emojiQuestions[currentQuestion].answer
+    const isAnswerCorrect = isCorrectAnswer(answer, emojiQuestions[currentQuestion].answer)
     setIsCorrect(isAnswerCorrect)
     
     if (isAnswerCorrect) {
@@ -57,15 +73,14 @@ export default function EmojiNlp() {
         await updateScore(userData.usn, 'emojiNlp', newScore)
         
         // Update progress in Firebase and localStorage
-        const nextQuestion = currentQuestion + 1
-        await updateProgress(userData.usn, 'emojiNlp', nextQuestion)
+        await updateProgress(userData.usn, 'emojiNlp', currentQuestion + 1)
         
         // Update localStorage with new progress and score
         localStorage.setItem('userData', JSON.stringify({
           ...userData,
           currentProgress: {
             ...userData.currentProgress,
-            emojiNlp: nextQuestion
+            emojiNlp: currentQuestion + 1
           },
           scores: {
             ...userData.scores,
