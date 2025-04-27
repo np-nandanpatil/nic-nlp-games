@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   FaceSmileIcon,
   DocumentTextIcon,
   ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline'
 import { db } from '../lib/firebase/config'
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 
 export default function Games() {
   const router = useRouter()
-  const [currentGame, setCurrentGame] = useState<string>('emoji-nlp')
   const [loading, setLoading] = useState(true)
-  const [showStartButton, setShowStartButton] = useState(false)
-  const [scores, setScores] = useState<{ total: number }>({ total: 0 })
+  const [completedGames, setCompletedGames] = useState<string[]>([])
+  const [scores, setScores] = useState<{ [key: string]: number }>({})
 
   useEffect(() => {
     const checkUserAndProgress = async () => {
@@ -30,83 +30,46 @@ export default function Games() {
         const { usn } = JSON.parse(userData)
         if (!db) throw new Error('Firebase not initialized')
 
-        console.log('Checking progress for USN:', usn)
-
-        // Get user's scores
+        // Get user's progress from Firebase
         const participantsRef = collection(db, 'participants')
         const q = query(participantsRef, where('usn', '==', usn))
         const querySnapshot = await getDocs(q)
 
-        if (querySnapshot.empty) {
-          console.log('No existing progress found, starting with Emoji NLP')
-          setCurrentGame('emoji-nlp')
-        } else {
+        if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data()
-          const userScores = userData.scores || {}
           const userProgress = userData.currentProgress || {}
-          console.log('Current scores:', userScores)
-          console.log('Current progress:', userProgress)
-          setScores(userScores)
+          const userScores = userData.scores || {}
 
-          // Determine next game based on progress
-          if (userProgress.emojiNlp < 10) { // 10 questions in Emoji NLP
-            console.log('Continuing with Emoji NLP')
-            setCurrentGame('emoji-nlp')
-          } else if (userProgress.categorize < 10) { // 10 questions in Categorize
-            console.log('Starting/Continuing Categorize')
-            setCurrentGame('categorize')
-          } else if (userProgress.wordMorph < 5) { // 5 puzzles in Word Morph
-            console.log('Starting/Continuing Word Morph')
-            setCurrentGame('word-morph')
-          } else {
-            console.log('All games completed')
-            setCurrentGame('completed')
-          }
+          // Check which games are completed based on progress
+          const completed = []
+          if (userProgress.emojiNlp >= 10) completed.push('emojiNlp')
+          if (userProgress.categorize >= 10) completed.push('categorize')
+          if (userProgress.wordMorph >= 5) completed.push('wordMorph')
+
+          setCompletedGames(completed)
+          setScores(userScores)
         }
+
+        // Also check localStorage for completed games
+        const localCompleted = JSON.parse(localStorage.getItem('completedGames') || '[]')
+        setCompletedGames(prev => Array.from(new Set([...prev, ...localCompleted])))
       } catch (error) {
         console.error('Error checking progress:', error)
       } finally {
         setLoading(false)
-        setShowStartButton(true)
       }
     }
 
     checkUserAndProgress()
   }, [router])
 
-  const handleStartGame = () => {
-    // Only allow starting if not completed
-    if (currentGame !== 'completed') {
-      router.push(`/games/${currentGame}`)
+  const handleGameClick = (gameId: string) => {
+    if (completedGames.includes(gameId)) {
+      alert('You have already completed this game!')
+      return
     }
+    router.push(`/games/${gameId}`)
   }
-
-  const games = [
-    {
-      title: 'Emoji NLP',
-      description: 'Guess NLP/ML terms from emoji combinations',
-      icon: <FaceSmileIcon className="w-12 h-12" />,
-      color: 'bg-pink-100 text-pink-600',
-      status: currentGame === 'emoji-nlp' ? 'current' :
-        currentGame === 'categorize' || currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
-    },
-    {
-      title: 'Categorize That!',
-      description: 'Classify short text into their correct categories',
-      icon: <DocumentTextIcon className="w-12 h-12" />,
-      color: 'bg-purple-100 text-purple-600',
-      status: currentGame === 'categorize' ? 'current' :
-        currentGame === 'word-morph' || currentGame === 'completed' ? 'completed' : 'upcoming'
-    },
-    {
-      title: 'Word Morph',
-      description: 'Transform words one letter at a time',
-      icon: <ArrowsRightLeftIcon className="w-12 h-12" />,
-      color: 'bg-blue-100 text-blue-600',
-      status: currentGame === 'word-morph' ? 'current' :
-        currentGame === 'completed' ? 'completed' : 'upcoming'
-    }
-  ]
 
   if (loading) {
     return (
@@ -116,63 +79,45 @@ export default function Games() {
     )
   }
 
-  if (currentGame === 'completed') {
-    return (
-      <main className="min-h-screen p-8">
-        <h1 className="text-4xl font-bold text-center mb-12 text-primary">
-          Congratulations!
-        </h1>
-        <p className="text-center text-xl mb-8">
-          Your quiz score is {scores?.total || 0} points out of 250!
-        </p>
-      </main>
-    )
-  }
-
   return (
-    <main className="min-h-screen p-8">
-      <h1 className="text-4xl font-bold text-center mb-12 text-primary">
-        Round 1: ML Nova
-      </h1>
+    <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <h1 className="text-4xl font-bold text-center mb-8 text-primary">
+          Choose a Game
+        </h1>
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {games.map((game, index) => (
-          <div
-            key={index}
-            className={`card h-full ${game.status === 'current' ? 'ring-2 ring-primary' :
-                game.status === 'completed' ? 'opacity-75' : 'opacity-50'
-              }`}
-          >
-            <div className={`rounded-full p-4 w-fit mb-4 ${game.color}`}>
-              {game.icon}
-            </div>
-            <h2 className="text-xl font-semibold mb-2">{game.title}</h2>
-            <p className="text-gray-600">{game.description}</p>
-            <div className="mt-4">
-              {game.status === 'current' && (
-                <span className="text-primary font-semibold">Current Game</span>
-              )}
-              {game.status === 'completed' && (
-                <span className="text-green-600 font-semibold">Completed</span>
-              )}
-              {game.status === 'upcoming' && (
-                <span className="text-gray-500 font-semibold">Upcoming</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showStartButton && currentGame !== 'completed' && (
-        <div className="text-center">
+        <div className="space-y-4">
           <button
-            onClick={handleStartGame}
-            className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-lg font-semibold"
+            onClick={() => handleGameClick('word-morph')}
+            className={`btn-primary w-full ${completedGames.includes('wordMorph') ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={completedGames.includes('wordMorph')}
           >
-            Start {games.find(g => g.status === 'current')?.title}
+            Word Morph {completedGames.includes('wordMorph') && `(Completed - ${scores.wordMorph || 0} points)`}
+          </button>
+
+          <button
+            onClick={() => handleGameClick('categorize')}
+            className={`btn-primary w-full ${completedGames.includes('categorize') ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={completedGames.includes('categorize')}
+          >
+            Categorize {completedGames.includes('categorize') && `(Completed - ${scores.categorize || 0} points)`}
+          </button>
+
+          <button
+            onClick={() => handleGameClick('emoji-nlp')}
+            className={`btn-primary w-full ${completedGames.includes('emojiNlp') ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={completedGames.includes('emojiNlp')}
+          >
+            Emoji NLP {completedGames.includes('emojiNlp') && `(Completed - ${scores.emojiNlp || 0} points)`}
           </button>
         </div>
-      )}
+
+        <div className="mt-8 text-center">
+          <Link href="/" className="btn-secondary">
+            Return to Home
+          </Link>
+        </div>
+      </div>
     </main>
   )
 } 

@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
     if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {
       throw new Error('Firebase configuration is missing required values')
     }
-    
+
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
     db = getFirestore(app)
     auth = getAuth(app)

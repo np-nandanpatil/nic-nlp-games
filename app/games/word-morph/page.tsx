@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateScore } from '../../lib/firebase/services'
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
+import { db } from '../../lib/firebase/config'
 
 const wordPairs = [
   { start: 'cat', end: 'dog' },
@@ -77,7 +79,7 @@ export default function WordMorph() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newWord = inputValue.toLowerCase().trim()
-    
+
     if (newWord.length !== currentWord.length) {
       alert('Word must be the same length!')
       return
@@ -110,31 +112,58 @@ export default function WordMorph() {
     if (newWord === wordPairs[currentPair].end) {
       setIsCorrect(true)
       setShowFeedback(true)
-      
+
       // Award 10 points for each puzzle completion
       const points = 10
       const newScore = score + points
       setScore(newScore)
-      
+
       // Update score immediately after puzzle completion
       setLoading(true)
       try {
         const userData = JSON.parse(localStorage.getItem('userData') || '{}')
         await updateScore(userData.usn, 'wordMorph', newScore)
         console.log('Score updated successfully:', newScore)
+        
+        // Update current progress in Firebase
+        if (!db) {
+          throw new Error('Firebase not initialized')
+        }
+        
+        const participantsRef = collection(db, 'participants')
+        const q = query(participantsRef, where('usn', '==', userData.usn))
+        const querySnapshot = await getDocs(q)
+        
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0]
+          await updateDoc(doc(db, 'participants', userDoc.id), {
+            'currentProgress.wordMorph': 5, // Mark as completed (5 puzzles)
+            'scores.wordMorph': newScore
+          })
+        }
+
+        // Mark game as completed in localStorage
+        const completedGames = JSON.parse(localStorage.getItem('completedGames') || '[]')
+        if (!completedGames.includes('wordMorph')) {
+          completedGames.push('wordMorph')
+          localStorage.setItem('completedGames', JSON.stringify(completedGames))
+        }
       } catch (err) {
         console.error('Error updating score:', err)
         setError('Failed to save your score. Please try again.')
       } finally {
         setLoading(false)
       }
-      
+
       setTimeout(() => {
         setShowFeedback(false)
         setAttempts(0)
         setLastWordMeaning(null)
         if (currentPair < wordPairs.length - 1) {
           setCurrentPair(currentPair + 1)
+        } else {
+          // All puzzles completed - redirect to completion page with the new score
+          router.push(`/games/completion?game=wordMorph&score=${newScore}`)
         }
       }, 2000)
     }
@@ -196,8 +225,8 @@ export default function WordMorph() {
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn-primary w-full"
               disabled={loading}
             >

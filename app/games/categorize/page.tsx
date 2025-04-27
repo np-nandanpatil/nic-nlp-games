@@ -79,7 +79,7 @@ export default function Categorize() {
     const isCorrect = category === questions[currentQuestion].category
     setSelectedAnswer(category)
     setShowFeedback(true)
-    
+
     if (isCorrect) {
       const newScore = score + 10
       setScore(newScore)
@@ -92,7 +92,7 @@ export default function Categorize() {
         console.error('Error updating score:', err)
         setError('Failed to save your score. Please try again.')
       } finally {
-      setLoading(false)
+        setLoading(false)
       }
     }
 
@@ -140,15 +140,14 @@ export default function Categorize() {
                 key={category}
                 onClick={() => handleAnswer(category)}
                 disabled={showFeedback || loading}
-                className={`w-full p-3 rounded-lg transition-colors ${
-                  showFeedback
-                    ? category === questions[currentQuestion].category
-                      ? 'bg-green-100 text-green-700'
-                      : category === selectedAnswer
+                className={`w-full p-3 rounded-lg transition-colors ${showFeedback
+                  ? category === questions[currentQuestion].category
+                    ? 'bg-green-100 text-green-700'
+                    : category === selectedAnswer
                       ? 'bg-red-100 text-red-700'
                       : 'bg-gray-100 text-gray-700'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
               >
                 {category}
               </button>

@@ -35,7 +35,7 @@ export interface NewParticipant {
 export const addParticipant = async (participant: NewParticipant) => {
   try {
     if (!db) throw new Error('Firebase not initialized')
-    
+
     console.log('Adding participant:', participant)
     const docRef = await addDoc(collection(db, 'participants'), {
       ...participant,
@@ -58,16 +58,16 @@ export const addParticipant = async (participant: NewParticipant) => {
 export const getParticipants = async (): Promise<Participant[]> => {
   try {
     if (!db) throw new Error('Firebase not initialized')
-    
+
     console.log('Fetching participants...')
     const q = query(collection(db, 'participants'), orderBy('scores.total', 'desc'))
     const querySnapshot = await getDocs(q)
-    
+
     const participants = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Participant[]
-    
+
     console.log('Fetched participants:', participants)
     return participants
   } catch (error) {
@@ -79,30 +79,30 @@ export const getParticipants = async (): Promise<Participant[]> => {
 export const updateScore = async (usn: string, game: 'emojiNlp' | 'categorize' | 'wordMorph', score: number) => {
   try {
     if (!db) throw new Error('Firebase not initialized')
-    
+
     console.log('Updating score for participant:', usn, 'game:', game, 'score:', score)
-    
+
     // First, find the document with matching USN
     const participantsRef = collection(db, 'participants')
     const q = query(participantsRef, where('usn', '==', usn))
     const querySnapshot = await getDocs(q)
-    
+
     if (querySnapshot.empty) {
       console.error('Participant not found:', usn)
       return
     }
-    
+
     // Get the first matching document (there should only be one)
     const participantDoc = querySnapshot.docs[0]
     const participantRef = doc(db, 'participants', participantDoc.id)
     const currentData = participantDoc.data()
-    
+
     const newScores = {
       ...currentData.scores,
       [game]: score,
       total: currentData.scores.total - currentData.scores[game] + score
     }
-    
+
     await updateDoc(participantRef, {
       scores: newScores,
       lastAnswerTime: new Date()
@@ -117,22 +117,22 @@ export const updateScore = async (usn: string, game: 'emojiNlp' | 'categorize' |
 export const updateProgress = async (usn: string, game: 'emojiNlp' | 'categorize' | 'wordMorph', questionNumber: number) => {
   try {
     if (!db) throw new Error('Firebase not initialized')
-    
+
     // Find the document with matching USN
     const participantsRef = collection(db, 'participants')
     const q = query(participantsRef, where('usn', '==', usn))
     const querySnapshot = await getDocs(q)
-    
+
     if (querySnapshot.empty) {
       console.error('Participant not found:', usn)
       return
     }
-    
+
     // Get the first matching document
     const participantDoc = querySnapshot.docs[0]
     const participantRef = doc(db, 'participants', participantDoc.id)
     const currentData = participantDoc.data()
-    
+
     await updateDoc(participantRef, {
       currentProgress: {
         ...currentData.currentProgress,

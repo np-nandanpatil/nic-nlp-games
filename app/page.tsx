@@ -35,14 +35,14 @@ export default function Home() {
         // User exists - get their data and progress
         const userData = querySnapshot.docs[0].data()
         const scores = userData.scores || {}
-        
+
         // Store user data in localStorage
         localStorage.setItem('userData', JSON.stringify({
           ...formData,
           currentProgress: userData.currentProgress || {},
           scores
         }))
-        
+
         // Redirect to games page
         router.push('/games')
       } else {
@@ -55,7 +55,7 @@ export default function Home() {
             wordMorph: 0
           }
         })
-        
+
         // Store user data in localStorage
         localStorage.setItem('userData', JSON.stringify({
           ...formData,
@@ -71,7 +71,7 @@ export default function Home() {
             total: 0
           }
         }))
-        
+
         // Redirect to games page
         router.push('/games')
       }
@@ -89,16 +89,16 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center mb-8 text-primary">
           NIC&apos;s ML Nova - Round 1
         </h1>
-        
+
         <div className="card">
           <h2 className="text-2xl font-semibold mb-6 text-center">Registration</h2>
-          
+
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
               {error}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -147,8 +147,8 @@ export default function Home() {
               />
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn-primary w-full flex items-center justify-center gap-2"
               disabled={loading}
             >

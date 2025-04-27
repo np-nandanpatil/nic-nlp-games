@@ -19,9 +19,9 @@ const emojiQuestions = [
 
 const isCorrectAnswer = (userAnswer: string, correctAnswer: string): boolean => {
   const normalizedUserAnswer = userAnswer.toLowerCase().trim()
-  
+
   // Handle alternative correct answers
-  switch(correctAnswer) {
+  switch (correctAnswer) {
     case 'artificial intelligence':
       return normalizedUserAnswer === 'artificial intelligence' || normalizedUserAnswer === 'ai'
     case 'cloud storage':
@@ -60,10 +60,10 @@ export default function EmojiNlp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     const isAnswerCorrect = isCorrectAnswer(answer, emojiQuestions[currentQuestion].answer)
     setIsCorrect(isAnswerCorrect)
-    
+
     if (isAnswerCorrect) {
       const newScore = score + 10
       setScore(newScore)
@@ -71,10 +71,10 @@ export default function EmojiNlp() {
       try {
         const userData = JSON.parse(localStorage.getItem('userData') || '{}')
         await updateScore(userData.usn, 'emojiNlp', newScore)
-        
+
         // Update progress in Firebase and localStorage
         await updateProgress(userData.usn, 'emojiNlp', currentQuestion + 1)
-        
+
         // Update localStorage with new progress and score
         localStorage.setItem('userData', JSON.stringify({
           ...userData,
@@ -95,7 +95,7 @@ export default function EmojiNlp() {
         setLoading(false)
       }
     }
-    
+
     setShowFeedback(true)
     setTimeout(() => {
       setShowFeedback(false)

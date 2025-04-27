@@ -11,34 +11,34 @@ type SortDirection = 'asc' | 'desc'
 // Helper function to format time difference
 const formatTimeDifference = (createdAt: any, lastAnswerTime: any) => {
   if (!createdAt || !lastAnswerTime) return 'N/A'
-  
+
   const start = createdAt.seconds * 1000
   const end = lastAnswerTime.seconds * 1000
   const diffMs = end - start
-  
+
   const minutes = Math.floor(diffMs / 60000)
   const seconds = Math.floor((diffMs % 60000) / 1000)
-  
+
   return `${minutes}m ${seconds}s`
 }
 
 // Helper function to calculate time-based score
 const calculateTimeBasedScore = (total: number, timeTaken: string): number => {
   if (timeTaken === 'N/A') return total
-  
+
   // Parse time taken string (format: "Xm Ys")
   const [minutes, seconds] = timeTaken.split(' ').map(part => {
     const num = parseInt(part.replace(/[^0-9]/g, ''))
     return part.includes('m') ? num * 60 : num
   })
-  
+
   const totalSeconds = minutes + seconds
-  
+
   // Base score is the total points
   // Time penalty: 1 point deducted for every 30 seconds
   const timePenalty = Math.floor(totalSeconds / 30)
   const finalScore = Math.max(0, total - timePenalty)
-  
+
   return finalScore
 }
 
@@ -62,7 +62,7 @@ export default function AdminLogin() {
         const data = doc.data()
         const timeTaken = formatTimeDifference(data.createdAt, data.lastAnswerTime)
         const timeBasedScore = calculateTimeBasedScore(data.scores?.total || 0, timeTaken)
-        
+
         return {
           id: doc.id,
           name: data.name,
@@ -108,7 +108,7 @@ export default function AdminLogin() {
 
       // Handle string sorting
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
+        return sortDirection === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue)
       }
@@ -124,19 +124,19 @@ export default function AdminLogin() {
     e.preventDefault()
     try {
       if (!db) throw new Error('Firebase not initialized')
-      
+
       // Check if username and password match admin credentials
       const adminSnapshot = await getDocs(collection(db, 'admins'))
       const admin = adminSnapshot.docs.find(doc => {
         const data = doc.data()
         return data.username === username && data.password === password
       })
-      
+
       if (!admin) {
         setError('Invalid credentials')
         return
       }
-      
+
       setIsAuthenticated(true)
       setError('')
     } catch (error: any) {
@@ -234,55 +234,55 @@ export default function AdminLogin() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
                 >
                   Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('usn')}
                 >
                   USN {sortField === 'usn' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('emojiNlp')}
                 >
                   Emoji NLP {sortField === 'emojiNlp' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('categorize')}
                 >
                   Categorize {sortField === 'categorize' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('wordMorph')}
                 >
                   Word Morph {sortField === 'wordMorph' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('total')}
                 >
                   Total {sortField === 'total' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('timeTaken')}
                 >
                   Time Taken {sortField === 'timeTaken' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('createdAt')}
                 >
                   Registered At {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('timeBasedScore')}
                 >
